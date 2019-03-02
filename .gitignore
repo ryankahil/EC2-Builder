@@ -1,3 +1,4 @@
 config.txt
 .git/*
 test2.pem
+*.log

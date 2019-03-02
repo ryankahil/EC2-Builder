@@ -12,6 +12,7 @@ import logging
 import sys
 import json
 import paramiko
+import time
 
 log = logging.getLogger(__name__)
 out_hdlr = logging.StreamHandler(sys.stdout)
@@ -80,13 +81,25 @@ def build(ctx,ami,instancetype,vpc,isweb,subnet,key):
 
 
 def configure_web(host):
-    log.info("Will be configuring Apache now..")
-    ssh = paramiko.SSHClient()
-    key = paramiko.RSAKey.from_private_key_file('test2.pem')
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_user = "ec2-user"
+    log.info("Attempting to connect as " + ssh_user)
     try:
-        ssh.connect(hostname=host, username=ec2-user, pkey=key)
+        log.info("Waiting for 60 seconds for EC2 instance to finish setting up..")
+        time.sleep(60)        
+        paramiko.util.log_to_file(os.getcwd() + "/ssh.log", level = "WARN")
+        ssh = paramiko.SSHClient()
+        key = paramiko.RSAKey.from_private_key_file(os.getcwd() + '/test2.pem')
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname=host, username=ssh_user, pkey=key)
+        log.info("Attempting Connection on host: " + host)
         log.info("Connection Successful...")
+        log.info("Will be configuring Apache now on host: " + host)
+        yum_update = 'yum update -y'
+        apache_install='yum install httpd -y'
+        ssh.exec_command(yum_update)
+        ssh.exec_command(apache_install)
+        log.info("Apache install is Complete!!")
+        log.info("Try accessing the website: http://" + host + ":80")
     except Exception as err:
         log.error(err)
         sys.exit()
