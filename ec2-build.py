@@ -11,6 +11,7 @@ import os
 import logging
 import sys
 import json
+import paramiko
 
 log = logging.getLogger(__name__)
 out_hdlr = logging.StreamHandler(sys.stdout)
@@ -66,7 +67,10 @@ def build(ctx,ami,instancetype,vpc,isweb,subnet,key):
                 NetworkInterfaces=[{'SubnetId': subnet, 'DeviceIndex': 0, 'AssociatePublicIpAddress': True, 'Groups': [sec_group.group_id]}])
                 instances[0].wait_until_running()
                 log.info(instances[0].id)
-                configure_web()
+                instances[0].load()
+                instance_dns = instances[0].public_dns_name
+                log.info(instance_dns)
+                configure_web(instance_dns)
         except Exception as err:
             log.error(err)
 	    sys.exit()
@@ -75,8 +79,17 @@ def build(ctx,ami,instancetype,vpc,isweb,subnet,key):
             sys.exit()
 
 
-def configure_web():
+def configure_web(host):
     log.info("Will be configuring Apache now..")
+    ssh = paramiko.SSHClient()
+    key = paramiko.RSAKey.from_private_key_file('test2.pem')
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        ssh.connect(hostname=host, username=ec2-user, pkey=key)
+        log.info("Connection Successful...")
+    except Exception as err:
+        log.error(err)
+        sys.exit()
 
 @main.command()
 @click.option('--instanceid',help='AWS Instance Id')
@@ -108,5 +121,6 @@ def connection():
     return connection
    
 main.add_command(build)
+main.add_command(destroy)
 
 if __name__ == "__main__": main()
