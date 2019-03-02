@@ -13,8 +13,8 @@ This is a simple CLI program in Python 2.7 that will spin up an EC2 instance. Th
 aws_access_key_id = <access_key>
 aws_secret_access_key = <secret_access_key>
 vpc = <VPC_ID>
-region = <region>```
-
+region = <region>
+```
 
 
 Then you should be ready to go!! 
