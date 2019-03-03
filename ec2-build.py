@@ -84,7 +84,7 @@ def build(ctx,ami,instancetype,vpc,isweb,subnet,key):
                 instances[0].load()
                 instance_dns = instances[0].public_dns_name
                 log.info(instance_dns)
-                configure_web(instance_dns)
+                configure_web(instance_dns,key)
         except Exception as err:
             log.error(err)
 	    sys.exit()
@@ -93,14 +93,14 @@ def build(ctx,ami,instancetype,vpc,isweb,subnet,key):
             sys.exit()
 
 
-def configure_web(host):
+def configure_web(host,key):
     ssh_user = "ec2-user"
     log.info("Attempting to connect as " + ssh_user)
     try:
         log.info("Waiting for 60 seconds for EC2 instance to finish setting up..")
         time.sleep(60)        
         ssh = paramiko.SSHClient()
-        key = paramiko.RSAKey.from_private_key_file(os.getcwd() + '/test2.pem')
+        key = paramiko.RSAKey.from_private_key_file(os.getcwd() +'/' +  key + '.pem')
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         connection = ssh.connect(hostname=host, username=ssh_user, pkey=key)
         log.info("Attempting Connection on host: " + host)
@@ -111,7 +111,7 @@ def configure_web(host):
             log.info(ssh_stdout)
             log.info("Apache install is Complete!!")
             time.sleep(5)
-            apache_turnon(host,ssh_user)
+            apache_turnon(host,ssh_user,key)
         except Exception as brr:
             log.error(brr)
             sys.exit()
@@ -135,14 +135,16 @@ def destroy(ctx,instanceid,sgid):
        log.error(err)
        sys.exit() 
 
-def apache_turnon(host,ssh_user):
-    log.info("Try accessing the website: http://" + host + ":80")
+def apache_turnon(host,ssh_user,key):
+    ## Need to see why I can't str concat on key variable. I am passing ssh_key as the variable - when I tried printing it out, it seemed to print characters out. I will fix this at a later date. 
     ssh = paramiko.SSHClient()
     key = paramiko.RSAKey.from_private_key_file(os.getcwd() + '/test2.pem')
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    connection = ssh.connect(hostname=host, username=ssh_user, pkey=key)
+    connection = ssh.connect(hostname=host, username=ssh_user, pkey=ssh_key)
     service_on='sudo service httpd start'
     ssh_stdn, ssh_stdout, ssh_stderr=ssh.exec_command(service_on)
+    log.info("Try accessing the website: http://" + host + ":80")
+    log.info('All set now!! If you need to SSH into the server, make sure to download your PEM key and place it in the project directory')
 
 def connection():
     connection = boto3.resource('ec2', aws_access_key_id=access_key,  aws_secret_access_key=secret_key, region_name=region)
