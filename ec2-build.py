@@ -13,6 +13,7 @@ import sys
 import json
 import paramiko
 import time
+import coloredlogs
 
 log = logging.getLogger(__name__)
 out_hdlr = logging.StreamHandler(sys.stdout)
@@ -20,10 +21,23 @@ out_hdlr.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
 out_hdlr.setLevel(logging.INFO)
 log.addHandler(out_hdlr)
 log.setLevel(logging.INFO)
+coloredlogs.install(level='INFO', logger=log)
 
 @click.group()
 def main():
     """ This is a simple EC2 Command line tool"""
+    config = configparser.RawConfigParser()
+    config_path = os.getcwd() + '/config.txt'
+    config.read(config_path)
+    log.info("Reading from config file" + config_path)
+    details_dict = dict(config.items('builder'))
+
+    global access_key 
+    access_key=config.get('builder','aws_access_key_id')
+    global secret_key
+    secret_key=config.get('builder','aws_secret_access_key')
+    global region
+    region=config.get('builder', 'region')
     pass
      
 @click.command()
@@ -45,7 +59,6 @@ def build(ctx,ami,instancetype,vpc,isweb,subnet,key):
 
     if isweb:
         log.info("Spinning up Web Server")
-        log.info("Reading from config file")
         try:
             ec2 = connection() 
             if ec2:
@@ -86,28 +99,31 @@ def configure_web(host):
     try:
         log.info("Waiting for 60 seconds for EC2 instance to finish setting up..")
         time.sleep(60)        
-        paramiko.util.log_to_file(os.getcwd() + "/ssh.log", level = "WARN")
         ssh = paramiko.SSHClient()
         key = paramiko.RSAKey.from_private_key_file(os.getcwd() + '/test2.pem')
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(hostname=host, username=ssh_user, pkey=key)
+        connection = ssh.connect(hostname=host, username=ssh_user, pkey=key)
         log.info("Attempting Connection on host: " + host)
         log.info("Connection Successful...")
-        log.info("Will be configuring Apache now on host: " + host)
-        yum_update = 'yum update -y'
-        apache_install='yum install httpd -y'
-        ssh.exec_command(yum_update)
-        ssh.exec_command(apache_install)
-        log.info("Apache install is Complete!!")
-        log.info("Try accessing the website: http://" + host + ":80")
+        try:
+            apache_install='sudo yum install httpd -y'
+            ssh_stdin, ssh_stdout, ssh_stderr=ssh.exec_command(apache_install)
+            log.info(ssh_stdout)
+            log.info("Apache install is Complete!!")
+            time.sleep(5)
+            apache_turnon(host,ssh_user)
+        except Exception as brr:
+            log.error(brr)
+            sys.exit()
     except Exception as err:
         log.error(err)
         sys.exit()
 
 @main.command()
 @click.option('--instanceid',help='AWS Instance Id')
+@click.option('--sgid',required=False,help='Security Group Id')
 @click.pass_context
-def destroy(ctx,instanceid):
+def destroy(ctx,instanceid,sgid):
    """ Destroy EC2 Instance and Security group """
    log.info("Terminating Instance...")
    try:
@@ -117,19 +133,18 @@ def destroy(ctx,instanceid):
        log.info("Instance ID: " + instanceid + " is destroyed.")
    except Exception as err:
        log.error(err)
-       sys.exit()
+       sys.exit() 
+
+def apache_turnon(host,ssh_user):
+    log.info("Try accessing the website: http://" + host + ":80")
+    ssh = paramiko.SSHClient()
+    key = paramiko.RSAKey.from_private_key_file(os.getcwd() + '/test2.pem')
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    connection = ssh.connect(hostname=host, username=ssh_user, pkey=key)
+    service_on='sudo service httpd start'
+    ssh_stdn, ssh_stdout, ssh_stderr=ssh.exec_command(service_on)
 
 def connection():
-    config = configparser.RawConfigParser()
-    config_path = os.getcwd() + '/config.txt'
-    config.read(config_path)
-    log.info("Reading from config file" + config_path)
-    details_dict = dict(config.items('builder'))
-
-    access_key = config.get('builder','aws_access_key_id')
-    secret_key = config.get('builder','aws_secret_access_key')
-    region = config.get('builder', 'region')
-
     connection = boto3.resource('ec2', aws_access_key_id=access_key,  aws_secret_access_key=secret_key, region_name=region)
     return connection
    
