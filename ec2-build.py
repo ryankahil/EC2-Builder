@@ -49,7 +49,7 @@ def main():
 @click.option('--key',help="Specify Key Name")
 @click.pass_context
 def build(ctx,ami,instancetype,vpc,isweb,subnet,key):
-    """ Will build out the EC2 instance """
+    """ Will build out the EC2 instance - Webserver for now. Many more to come! """
     log.info("Building EC2...")
     log.info("Collecting Information....")
     log.info("AMI: " + ami)
@@ -121,10 +121,10 @@ def configure_web(host):
 
 @main.command()
 @click.option('--instanceid',help='AWS Instance Id')
-@click.option('--sgid',required=False,help='Security Group Id')
+@click.option('--sgid',required=False,help='Coming Soon... For now, this is Optional')
 @click.pass_context
 def destroy(ctx,instanceid,sgid):
-   """ Destroy EC2 Instance and Security group """
+   """ Destroy EC2 Instance """
    log.info("Terminating Instance...")
    try:
        ec2 = connection()
