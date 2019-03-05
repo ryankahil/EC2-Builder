@@ -123,7 +123,7 @@ def configure_web(host,key):
 
 @main.command()
 @click.option('--instanceid',required=False,help='AWS Instance Id')
-@click.option('--sgid',required=False,help='Coming Soon... For now, this is Optional')
+@click.option('--sgid',required=False,help='Security Group ID (optional)')
 @click.pass_context
 def destroy(ctx,instanceid,sgid):
    """ Destroy EC2 Instance """
