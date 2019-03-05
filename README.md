@@ -12,7 +12,8 @@ git clone git@github.com:ryankahil/EC2-Builder.git
 ```
 
 2. In your AWS account, create a programmatic user in IAM and provide it EC2:FullAccess permissions. Download the CSV file.
-3. You will need to create a config.txt in the project directory that will contain the access key and secret key generated in AWS. Should be in this format:
+3. In your AWS account, create an AMI if you do not have one in your account. 
+4. You will need to create a config.txt in the project directory that will contain the access key and secret key generated in AWS. Should be in this format:
 
 ```
 [builder]
@@ -22,7 +23,7 @@ vpc = <VPC_ID>
 region = <region>
 ```
 
-4. You will need to run the following command to download some of the dependencies for the code:
+5. You will need to run the following command to download some of the dependencies for the code:
 
 ```
 pip install -r requirements.txt
