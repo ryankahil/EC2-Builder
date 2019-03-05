@@ -84,9 +84,8 @@ Usage: ec2-build.py destroy [OPTIONS]
 
 Options:
   --instanceid TEXT  AWS Instance Id
-  --sgid TEXT        Coming Soon... For now, this is Optional
+  --sgid TEXT        Security Group ID (optional)
   --help             Show this message and exit.
-
 ```
 
 Here is an example of how this is run:
